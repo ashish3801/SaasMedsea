@@ -1,0 +1,44 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile # uses Dockerfile we created which sets up the environment with installations specified
+    image: medseasaas # This is a custom name since we are creating the image ourselves using our own dockerfile (as stated above)
+    container_name: MedseaSaas_app # This is a custom name for our container. This container runs the laravel_app image we have defined
+    ports:
+      -  "${DOCKER_APP_PORT}:80"  # Map port 80 inside the container to port 8082 on your local machine (accessed from browser)
+    volumes:
+      - "${DOCKER_PROJECT_PATH}:/var/www/html"  # Mount the project directory host_path:container_path
+    depends_on:
+      - db  # Ensure the app starts after the db service
+
+  db:
+    image: mysql:8.0 # uses official MySQL 8.0 image pulled from Docker Hub
+    container_name: MedseaSaas_app_db # Custom name for our container. This container runs the mysql:8.0 image (as stated above)
+    restart: always # means the container will always restart unless it is explicitly stopped. 
+    ports:
+      - "${DOCKER_DB_PORT}:3306"  # Map the internal MySQL port 3306 to external port 3307  (accessed from outside)
+    environment:
+      MYSQL_ROOT_HOST: ${DOCKER_DB_ROOT_HOST}
+      MYSQL_ROOT_PASSWORD: ${DOCKER_DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DOCKER_DB_DATABASE}
+      MYSQL_USER: ${DOCKER_DB_USERNAME}
+      MYSQL_PASSWORD: ${DOCKER_DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/mysql  # Volume for persisting MySQL data. Mounts db_data (outside container refer below) to /var/lib/mysql inside this container (db).
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin # uses Phpmyadmin image pulled from Docker hub
+    container_name: phpmyadmin_trackit_2023 # Custom name for our container
+    restart: always
+    ports:
+      - "${DOCKER_PMA_PORT}:80"  # Access phpMyAdmin at port 8081 (accessed from browser)
+    environment:
+      PMA_HOST: db  # Use the 'db' service for phpMyAdmin connection
+      PMA_PORT: 3306  # Default MySQL port inside the container
+      UPLOAD_LIMIT: 300M
+    depends_on:
+      - db  # Ensure phpMyAdmin starts after the db service
+
+volumes:
+  db_data:  # Persistent storage for MySQL data. Even if the db (laravel_db) container is stopped or deleted, the data will remain stored in the db_data volume.
