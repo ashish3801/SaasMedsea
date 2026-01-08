@@ -45,6 +45,7 @@ class RegistrationController extends Controller
             'agent:id,name',
         ])
             ->where('is_active', 1)
+            ->where('company_id', Auth::user()->company_id)
             ->orderBy('created_at', 'desc')
             ->get();
 
